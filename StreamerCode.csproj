@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <AssemblyName>RoomInfoMod</AssemblyName>
-    <RootNamespace>RoomInfoMod</RootNamespace>
+    <AssemblyName>StreanCodeMOD</AssemblyName>
+    <RootNamespace>StreanCodeMOD</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
 
@@ -46,6 +46,7 @@
       <Private>false</Private>
     </Reference>
 
+    <Reference Include="System.Windows.Forms" />
     <!-- Photon (managed DLLs - no IL2CPP issues) -->
     <Reference Include="PhotonUnityNetworking">
       <HintPath>$(ManagedPath)\PhotonUnityNetworking.dll</HintPath>
@@ -59,13 +60,13 @@
 
   <!-- Auto-copy to BepInEx plugins after build -->
   <Target Name="CopyToPlugins" AfterTargets="Build">
-    <MakeDir Directories="$(GorillaTagPath)\BepInEx\plugins\RoomInfoMod" />
+    <MakeDir Directories="$(GorillaTagPath)\BepInEx\plugins\StreanCodeMOD" />
     <Copy
       SourceFiles="$(OutputPath)$(AssemblyName).dll"
-      DestinationFolder="$(GorillaTagPath)\BepInEx\plugins\RoomInfoMod"
+      DestinationFolder="$(GorillaTagPath)\BepInEx\plugins\StreanCodeMOD"
       SkipUnchangedFiles="true"
     />
-    <Message Text="[RoomInfoMod] Copied to BepInEx/plugins/RoomInfoMod/" Importance="high" />
+    <Message Text="[StreanCodeMOD] Copied to BepInEx/plugins/StreanCodeMOD/" Importance="high" />
   </Target>
 
 </Project>
