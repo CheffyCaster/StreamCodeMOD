@@ -1,4 +1,4 @@
-# RoomInfoMod — Gorilla Tag BepInEx Mod
+# StreamCodeMOD — Gorilla Tag BepInEx Mod
 
 Displays a draggable, toggleable HUD overlay showing your **current room code** and **player count**.
 
