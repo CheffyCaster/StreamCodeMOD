@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11612.150 stable
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamerCode", "StreamerCode.csproj", "{B615D180-8CCA-59B7-DA14-DAA6D73CE080}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B615D180-8CCA-59B7-DA14-DAA6D73CE080}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B615D180-8CCA-59B7-DA14-DAA6D73CE080}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B615D180-8CCA-59B7-DA14-DAA6D73CE080}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B615D180-8CCA-59B7-DA14-DAA6D73CE080}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {81A41014-00BE-4FFD-918E-6468BE138F62}
+	EndGlobalSection
+EndGlobal
