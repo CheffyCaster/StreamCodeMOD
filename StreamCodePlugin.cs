@@ -14,17 +14,28 @@ namespace RoomInfoMod
         private readonly Harmony harmony = new Harmony(PluginInfo.PLUGIN_GUID);
         private bool isVisible = true;
         private bool isDragging = false;
+        private bool isResizing = false;
+        private int resizeCorner = -1;
         private Vector2 windowPos = new Vector2(28f, 28f);
         private Vector2 dragOffset = Vector2.zero;
+        private Vector2 resizeStart = Vector2.zero;
+        private Vector2 resizePosStart = Vector2.zero;
+        private float resizeWStart = 0f;
+        private float resizeHStart = 0f;
         private float alpha = 1f;
         private float targetAlpha = 1f;
-        private const float W = 360f;
-        private const float H = 150f;
+        private float panelW = 360f;
+        private float panelH = 150f;
+        private const float MIN_W = 200f;
+        private const float MIN_H = 100f;
+        private const float HANDLE = 18f;
         private const int R = 22;
         public static string RoomCode = "";
         public static int PlayerCount = 0;
         public static int MaxPlayers = 0;
         private Texture2D tPanel = null;
+        private Texture2D tHandle = null;
+        private GUIStyle sWatermark = null;
         private GUIStyle sTitle = null;
         private GUIStyle sLabel = null;
         private GUIStyle sValue = null;
@@ -100,46 +111,111 @@ namespace RoomInfoMod
                 ev.Use();
             }
             if (alpha < 0.01f) return;
-            if (tPanel == null) BuildTexture();
+            if (tPanel == null || tPanel.width != (int)panelW || tPanel.height != (int)panelH)
+                BuildTexture();
+            if (tHandle == null) BuildHandle();
             if (sTitle == null) BuildStyles();
-            windowPos.x = Mathf.Clamp(windowPos.x, 0, Screen.width - W);
-            windowPos.y = Mathf.Clamp(windowPos.y, 0, Screen.height - H);
-            Event e = Event.current;
-            Rect win = new Rect(windowPos.x, windowPos.y, W, H);
-            switch (e.type)
-            {
-                case EventType.MouseDown when e.button == 0 && win.Contains(e.mousePosition):
-                    isDragging = true; dragOffset = e.mousePosition - windowPos; e.Use(); break;
-                case EventType.MouseDrag when isDragging:
-                    windowPos = e.mousePosition - dragOffset; e.Use(); break;
-                case EventType.MouseUp when isDragging:
-                    isDragging = false; e.Use(); break;
-            }
+            windowPos.x = Mathf.Clamp(windowPos.x, 0, Screen.width - panelW);
+            windowPos.y = Mathf.Clamp(windowPos.y, 0, Screen.height - panelH);
             float x = Mathf.Round(windowPos.x);
             float y = Mathf.Round(windowPos.y);
+            Rect cornerTL = new Rect(x, y, HANDLE, HANDLE);
+            Rect cornerTR = new Rect(x + panelW - HANDLE, y, HANDLE, HANDLE);
+            Rect cornerBL = new Rect(x, y + panelH - HANDLE, HANDLE, HANDLE);
+            Rect cornerBR = new Rect(x + panelW - HANDLE, y + panelH - HANDLE, HANDLE, HANDLE);
+            Event e = Event.current;
+            bool hoverTL = cornerTL.Contains(e.mousePosition);
+            bool hoverTR = cornerTR.Contains(e.mousePosition);
+            bool hoverBL = cornerBL.Contains(e.mousePosition);
+            bool hoverBR = cornerBR.Contains(e.mousePosition);
+            bool hoverAny = hoverTL || hoverTR || hoverBL || hoverBR;
+            switch (e.type)
+            {
+                case EventType.MouseDown when e.button == 0:
+                    if (hoverTL) { isResizing = true; resizeCorner = 0; }
+                    else if (hoverTR) { isResizing = true; resizeCorner = 1; }
+                    else if (hoverBL) { isResizing = true; resizeCorner = 2; }
+                    else if (hoverBR) { isResizing = true; resizeCorner = 3; }
+                    else if (new Rect(x, y, panelW, panelH).Contains(e.mousePosition))
+                    { isDragging = true; dragOffset = e.mousePosition - windowPos; }
+                    if (isResizing)
+                    {
+                        resizeStart = e.mousePosition;
+                        resizePosStart = windowPos;
+                        resizeWStart = panelW;
+                        resizeHStart = panelH;
+                    }
+                    e.Use();
+                    break;
+                case EventType.MouseDrag when isResizing:
+                    float dx = e.mousePosition.x - resizeStart.x;
+                    float dy = e.mousePosition.y - resizeStart.y;
+                    switch (resizeCorner)
+                    {
+                        case 0:
+                            panelW = Mathf.Max(MIN_W, resizeWStart - dx);
+                            panelH = Mathf.Max(MIN_H, resizeHStart - dy);
+                            windowPos.x = resizePosStart.x + (resizeWStart - panelW);
+                            windowPos.y = resizePosStart.y + (resizeHStart - panelH);
+                            break;
+                        case 1:
+                            panelW = Mathf.Max(MIN_W, resizeWStart + dx);
+                            panelH = Mathf.Max(MIN_H, resizeHStart - dy);
+                            windowPos.y = resizePosStart.y + (resizeHStart - panelH);
+                            break;
+                        case 2:
+                            panelW = Mathf.Max(MIN_W, resizeWStart - dx);
+                            panelH = Mathf.Max(MIN_H, resizeHStart + dy);
+                            windowPos.x = resizePosStart.x + (resizeWStart - panelW);
+                            break;
+                        case 3:
+                            panelW = Mathf.Max(MIN_W, resizeWStart + dx);
+                            panelH = Mathf.Max(MIN_H, resizeHStart + dy);
+                            break;
+                    }
+                    e.Use();
+                    break;
+                case EventType.MouseDrag when isDragging:
+                    windowPos = e.mousePosition - dragOffset; e.Use(); break;
+                case EventType.MouseUp:
+                    isDragging = false; isResizing = false; resizeCorner = -1; e.Use(); break;
+            }
+            x = Mathf.Round(windowPos.x);
+            y = Mathf.Round(windowPos.y);
             GUI.color = new Color(0f, 0f, 0f, 0.45f * alpha);
-            GUI.DrawTexture(new Rect(x + 3f, y + 5f, W, H), tPanel);
+            GUI.DrawTexture(new Rect(x + 3f, y + 5f, panelW, panelH), tPanel);
             GUI.color = new Color(1f, 1f, 1f, alpha);
-            GUI.DrawTexture(new Rect(x, y, W, H), tPanel);
-            GUI.Label(new Rect(x, y + 12f, W, 26f), "StreamerCodeMOD", sTitle);
+            GUI.DrawTexture(new Rect(x, y, panelW, panelH), tPanel);
+            float titleH = panelH * 0.18f;
+            float titleY = y + titleH * 0.4f;
+            GUI.Label(new Rect(x, titleY, panelW, titleH * 1.2f), "StreamCodeMOD", sTitle);
             GUI.color = new Color(1f, 1f, 1f, 0.12f * alpha);
-            GUI.DrawTexture(new Rect(x + 24f, y + 46f, W - 48f, 1f), tPanel);
+            GUI.DrawTexture(new Rect(x + panelW * 0.08f, y + panelH * 0.36f, panelW * 0.84f, 1f), tPanel);
             GUI.color = new Color(1f, 1f, 1f, alpha);
-            float lx = x + 24f;
-            float vx = x + 170f;
-            float vw = W - 194f;
-            GUI.Label(new Rect(lx, y + 56f, 136f, 30f), "ROOM CODE", sLabel);
-            GUI.Label(new Rect(vx, y + 56f, vw, 30f),
-                string.IsNullOrEmpty(RoomCode) ? "—" : RoomCode, sValue);
-            GUI.Label(new Rect(lx, y + 96f, 136f, 30f), "PLAYERS", sLabel);
+            float lx = x + panelW * 0.08f;
+            float vx = x + panelW * 0.47f;
+            float vw = panelW * 0.45f;
+            float lw = panelW * 0.38f;
+            float rh = panelH * 0.22f;
+            float row1 = y + panelH * 0.42f;
+            float row2 = y + panelH * 0.68f;
+            GUI.Label(new Rect(lx, row1, lw, rh), "ROOM CODE", sLabel);
+            GUI.Label(new Rect(vx, row1, vw, rh), string.IsNullOrEmpty(RoomCode) ? "—" : RoomCode, sValue);
+            GUI.Label(new Rect(lx, row2, lw, rh), "PLAYERS", sLabel);
             string ps = MaxPlayers > 0 ? $"{PlayerCount} / {MaxPlayers}"
                       : PlayerCount > 0 ? $"{PlayerCount}" : "—";
-            GUI.Label(new Rect(vx, y + 96f, vw, 30f), ps, sValue);
+            GUI.Label(new Rect(vx, row2, vw, rh), ps, sValue);
+            if (sWatermark == null) BuildWatermarkStyle();
+            float wmW = 260f;
+            float wmH = 22f;
+            GUI.color = new Color(1f, 1f, 1f, 0.30f);
+            GUI.Label(new Rect(Screen.width - wmW - 6f, Screen.height - wmH - 6f, wmW, wmH), "StreamCodeMOD  Made by Cheffy", sWatermark);
             GUI.color = Color.white;
         }
         private void BuildTexture()
         {
-            int w = (int)W, h = (int)H;
+            if (tPanel != null) Object.Destroy(tPanel);
+            int w = (int)panelW, h = (int)panelH;
             tPanel = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tPanel.filterMode = FilterMode.Bilinear;
             tPanel.wrapMode = TextureWrapMode.Clamp;
@@ -154,6 +230,24 @@ namespace RoomInfoMod
             tPanel.SetPixels(px);
             tPanel.Apply(false);
         }
+        private void BuildHandle()
+        {
+            int s = (int)HANDLE;
+            tHandle = new Texture2D(s, s, TextureFormat.RGBA32, false);
+            tHandle.filterMode = FilterMode.Bilinear;
+            Color[] px = new Color[s * s];
+            float half = s * 0.5f;
+            for (int i = 0; i < s * s; i++)
+            {
+                float fx = (i % s) - half + 0.5f;
+                float fy = (i / s) - half + 0.5f;
+                float d = Mathf.Sqrt(fx * fx + fy * fy);
+                float a = 1f - Mathf.Clamp01((d - half + 2f) / 2f);
+                px[i] = new Color(1f, 1f, 1f, a);
+            }
+            tHandle.SetPixels(px);
+            tHandle.Apply(false);
+        }
         private static float CornerAlpha(int col, int row, int w, int h, int r)
         {
             float sx = col;
@@ -165,31 +259,36 @@ namespace RoomInfoMod
             float dist = Mathf.Sqrt(dx * dx + dy * dy);
             return 1f - Mathf.Clamp01((dist - r + 2f) / 2f);
         }
-        private static float Circ(float px, float py, float cx, float cy, float r)
-        {
-            float d = Mathf.Sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
-            return 1f - Mathf.Clamp01((d - r + 2f) / 2f);
-        }
         private void BuildStyles()
         {
             sTitle = new GUIStyle
             {
                 normal = { textColor = new Color(1f, 1f, 1f, 0.55f) },
-                fontSize = 13,
+                fontSize = Mathf.RoundToInt(panelH * 0.09f),
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.UpperCenter,
             };
             sLabel = new GUIStyle
             {
                 normal = { textColor = new Color(1f, 1f, 1f, 0.35f) },
-                fontSize = 13,
+                fontSize = Mathf.RoundToInt(panelH * 0.085f),
                 alignment = TextAnchor.MiddleLeft,
             };
             sValue = new GUIStyle
             {
                 normal = { textColor = new Color(1f, 1f, 1f, 1f) },
-                fontSize = 17,
+                fontSize = Mathf.RoundToInt(panelH * 0.115f),
                 fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleRight,
+            };
+        }
+        private void BuildWatermarkStyle()
+        {
+            sWatermark = new GUIStyle
+            {
+                normal = { textColor = new Color(1f, 1f, 1f, 1f) },
+                fontSize = 14,
+                fontStyle = FontStyle.Italic,
                 alignment = TextAnchor.MiddleRight,
             };
         }
