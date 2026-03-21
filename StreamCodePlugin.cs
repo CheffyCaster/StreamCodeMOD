@@ -1,4 +1,5 @@
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using Photon.Pun;
@@ -30,6 +31,13 @@ namespace RoomInfoMod
         private const float MIN_H = 100f;
         private const float HANDLE = 18f;
         private const int R = 22;
+        private ConfigEntry<float> cfgX;
+        private ConfigEntry<float> cfgY;
+        private ConfigEntry<float> cfgW;
+        private ConfigEntry<float> cfgH;
+        private float lastBuiltPanelH = -1f;
+        private float saveTimer = 0f;
+        private const float SAVE_DELAY = 1f;
         public static string RoomCode = "";
         public static int PlayerCount = 0;
         public static int MaxPlayers = 0;
@@ -44,6 +52,14 @@ namespace RoomInfoMod
             Instance = this;
             Logger = base.Logger;
             Logger.LogInfo($"[{PluginInfo.PLUGIN_NAME}] Awake");
+            cfgX = Config.Bind("Window", "PosX", 28f, "Window X position");
+            cfgY = Config.Bind("Window", "PosY", 28f, "Window Y position");
+            cfgW = Config.Bind("Window", "Width", 360f, "Window width");
+            cfgH = Config.Bind("Window", "Height", 150f, "Window height");
+            windowPos.x = cfgX.Value;
+            windowPos.y = cfgY.Value;
+            panelW = cfgW.Value;
+            panelH = cfgH.Value;
             try
             {
                 harmony.PatchAll(typeof(RoomInfoPlugin));
@@ -54,11 +70,30 @@ namespace RoomInfoMod
                 Logger.LogError($"[{PluginInfo.PLUGIN_NAME}] Harmony FAIL: {ex.Message}");
             }
         }
-        private void OnDestroy() => harmony.UnpatchSelf();
+        private void OnDestroy()
+        {
+            SaveConfig();
+            harmony.UnpatchSelf();
+        }
+        private void SaveConfig()
+        {
+            cfgX.Value = windowPos.x;
+            cfgY.Value = windowPos.y;
+            cfgW.Value = panelW;
+            cfgH.Value = panelH;
+            Config.Save();
+        }
         private void Update()
         {
             targetAlpha = isVisible ? 1f : 0f;
             alpha = Mathf.Lerp(alpha, targetAlpha, Time.deltaTime * 10f);
+            if (isDragging || isResizing)
+                saveTimer = SAVE_DELAY;
+            else if (saveTimer > 0f)
+            {
+                saveTimer -= Time.deltaTime;
+                if (saveTimer <= 0f) SaveConfig();
+            }
             SafePoll();
         }
         private static void SafePoll()
@@ -114,7 +149,7 @@ namespace RoomInfoMod
             if (tPanel == null || tPanel.width != (int)panelW || tPanel.height != (int)panelH)
                 BuildTexture();
             if (tHandle == null) BuildHandle();
-            if (sTitle == null) BuildStyles();
+            if (sTitle == null || lastBuiltPanelH != panelH) BuildStyles();
             windowPos.x = Mathf.Clamp(windowPos.x, 0, Screen.width - panelW);
             windowPos.y = Mathf.Clamp(windowPos.y, 0, Screen.height - panelH);
             float x = Mathf.Round(windowPos.x);
@@ -281,6 +316,7 @@ namespace RoomInfoMod
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleRight,
             };
+            lastBuiltPanelH = panelH;
         }
         private void BuildWatermarkStyle()
         {
