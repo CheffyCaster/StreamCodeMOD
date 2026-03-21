@@ -13,15 +13,6 @@ Displays a draggable, toggleable HUD overlay showing your **current room code** 
 
 ---
 
-## Requirements
-
-| Requirement | Version |
-|---|---|
-| Gorilla Tag | Latest (Steam) |
-| BepInEx | 5.4.21+ (IL2CPP or Mono depending on your GT version) |
-
-> **Note:** Most Gorilla Tag modding uses **BepInEx 6 IL2CPP**. If you're on that build, you may need to adjust the `TargetFramework` in the `.csproj` from `net472` to `net6.0` and switch the `OnGUI` approach to a canvas-based UI, as IMGUI behaves differently under IL2CPP.
-
 ---
 
 ## Building
