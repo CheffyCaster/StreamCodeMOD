@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <AssemblyName>StreanCodeMOD</AssemblyName>
-    <RootNamespace>StreanCodeMOD</RootNamespace>
+    <AssemblyName>StreamCodeMOD</AssemblyName>
+    <RootNamespace>StreamCodeMOD</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
 
@@ -60,13 +60,13 @@
 
   <!-- Auto-copy to BepInEx plugins after build -->
   <Target Name="CopyToPlugins" AfterTargets="Build">
-    <MakeDir Directories="$(GorillaTagPath)\BepInEx\plugins\StreanCodeMOD" />
+    <MakeDir Directories="$(GorillaTagPath)\BepInEx\plugins\StreamCodeMOD" />
     <Copy
       SourceFiles="$(OutputPath)$(AssemblyName).dll"
-      DestinationFolder="$(GorillaTagPath)\BepInEx\plugins\StreanCodeMOD"
+      DestinationFolder="$(GorillaTagPath)\BepInEx\plugins\StreamCodeMOD"
       SkipUnchangedFiles="true"
     />
-    <Message Text="[StreanCodeMOD] Copied to BepInEx/plugins/StreanCodeMOD/" Importance="high" />
+    <Message Text="[StreamCodeMOD] Copied to BepInEx/plugins/StreamCodeMOD/" Importance="high" />
   </Target>
 
 </Project>
